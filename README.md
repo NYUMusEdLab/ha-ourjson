@@ -1,2 +1,2 @@
 # ha-ourjson
-High-Availability build of ourjson (Beta)
+High-Availability build of ourjson (Alpha)
