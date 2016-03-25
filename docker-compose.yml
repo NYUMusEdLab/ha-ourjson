@@ -1,0 +1,10 @@
+api:
+  build: git@github.com:NYUMusEdLab/ha-ourjson.git
+  restart: always
+  environment:
+    - MONGO_DB_NAME=ourjson
+    - VIRTUAL_HOST=api.beta.musedlab.org
+  expose:
+    - "8080"
+  external_links:
+    - mongo/mongo-cluster:mongo
