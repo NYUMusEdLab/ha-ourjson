@@ -1,8 +1,7 @@
 'use strict';
 
 const port = process.env.PORT || '8080';
-const hostname = process.env.HOSTNAME || null;
-const url = process.env.VIRTUAL_HOST || 'localhost:' + port;
+const url = process.env.VIRTUAL_HOST || `localhost:${port}`;
 const dbhost = process.env.DBHOST || 'mongo';
 const dbname = process.env.MONGO_DB_NAME || 'ourjson';
 const protocol = process.env.HTTP_PROTOCOL || 'https';
@@ -15,11 +14,11 @@ const key = require('mongo-key-escape');
 function filterkeys(json) {
   const finalObj = (Array.isArray(json)) ? [] : {};
   if (Array.isArray(json)) {
-    json.forEach(function filterKeysArrayForEach(item, index) {
+    json.forEach((item, index) => {
       finalObj[index] = (typeof item === 'object' && json[item] !== null) ? filterkeys(item) : item;
     });
   } else {
-    Object.keys(json).forEach(function filterKeysObjectForEach(item) {
+    Object.keys(json).forEach((item) => {
       finalObj[key.escape(item)] = (typeof json[item] === 'object' && json[item] !== null) ? filterkeys(json[item]) : json[item];
     });
   }
@@ -29,11 +28,11 @@ function filterkeys(json) {
 function unfilterkeys(json) {
   const finalObj = (Array.isArray(json)) ? [] : {};
   if (Array.isArray(json)) {
-    json.forEach(function unfilterKeysArrayForEach(item, index) {
+    json.forEach((item, index) => {
       finalObj[index] = (typeof item === 'object' && json[item] !== null) ? unfilterkeys(item) : item;
     });
   } else {
-    Object.keys(json).forEach(function unfilterKeysObjectForEach(item) {
+    Object.keys(json).forEach((item) => {
       finalObj[key.unescape(item)] = (typeof json[item] === 'object' && json[item] !== null) ? unfilterkeys(json[item]) : json[item];
     });
   }
@@ -67,9 +66,9 @@ const server = restify.createServer();
 server.pre(restify.pre.sanitizePath());
 server.use(restify.bodyParser({ mapParams: false }));
 
-const db = mongojs(dbhost + '/' + dbname, ['bins']);
+const db = mongojs(`${dbhost}/${dbname}`, ['bins']);
 
-server.get('/', function serverGetRoot(req, res, next) {
+server.get('/', (req, res, next) => {
   res.json(200, {
     status: 200,
     message: 'Welcome to OurJSON API v1.0.2',
@@ -78,13 +77,21 @@ server.get('/', function serverGetRoot(req, res, next) {
   });
   next();
 });
-server.post('/bins', filterKeys, function postBucket(req, res, next) {
+server.get('/healthz', (req, res, next) => {
+  res.json(200, {
+    status: '200',
+    message: 'Server is up',
+  });
+  next();
+});
+
+server.post('/bins', filterKeys, (req, res, next) => {
   // Generate ID
   const binId = shortid.generate();
   db.bins.save({
-    binId: binId,
+    binId,
     json: req.body,
-  }, function postBucketSaveCallback(err, doc) {
+  }, (err, doc) => {
     if (err) {
       res.json(500, {
         status: 500,
@@ -93,7 +100,7 @@ server.post('/bins', filterKeys, function postBucket(req, res, next) {
       });
     } if (doc) {
       res.header('Bin-ID', binId);
-      res.json(201, {uri: protocol + '://' + url + '/bins/' + binId});
+      res.json(201, { uri: `${protocol}://${url}/bins/${binId}` });
     } else {
       res.json(500, {
         status: 500,
@@ -105,7 +112,7 @@ server.post('/bins', filterKeys, function postBucket(req, res, next) {
   next();
 });
 
-server.get('/bins/:binId', function getBucketId(req, res, next) {
+server.get('/bins/:binId', (req, res, next) => {
   const binId = req.params.binId;
   if (binId === '') {
     res.json(404, {
@@ -116,8 +123,8 @@ server.get('/bins/:binId', function getBucketId(req, res, next) {
   }
   db.bins.find().limit(1);
   db.bins.find({
-    binId: binId,
-  }, function getBucketIdCallback(err, doc) {
+    binId,
+  }, (err, doc) => {
     if (err) {
       res.json(500, {
         status: 500,
@@ -130,14 +137,14 @@ server.get('/bins/:binId', function getBucketId(req, res, next) {
       res.json(404, {
         status: 404,
         message: 'Not Found',
-        Description: 'We could not find a bin with the ID (' + binId + ') in our system',
+        Description: `We could not find a bin with the ID (${binId}) in our system`,
       });
     }
   });
   next();
 });
 
-server.put('/bins/:binId', filterKeys, function putBucketId(req, res, next) {
+server.put('/bins/:binId', filterKeys, (req, res, next) => {
   const binId = req.params.binId;
   if (binId === '') {
     res.json(404, {
@@ -147,12 +154,12 @@ server.put('/bins/:binId', filterKeys, function putBucketId(req, res, next) {
     });
   }
   db.bins.update({
-    binId: binId,
+    binId,
   }, {
     $set: {
       json: req.body,
     },
-  }, function putBucketIdCallback(err, doc) {
+  }, (err, doc) => {
     if (err) {
       res.json(500, {
         status: 500,
@@ -163,7 +170,7 @@ server.put('/bins/:binId', filterKeys, function putBucketId(req, res, next) {
       res.json(404, {
         status: 404,
         message: 'Not Found',
-        Description: 'We could not find a bin with the ID (' + binId + ') in our system',
+        Description: `We could not find a bin with the ID (${binId}) in our system`,
       });
     } else {
       res.json(200, unfilterkeys(req.origBody));
@@ -173,13 +180,13 @@ server.put('/bins/:binId', filterKeys, function putBucketId(req, res, next) {
 });
 
 // Session export
-server.post('/export', function exportFunction(req, res, next) {
+server.post('/export', (req, res, next) => {
   const selectedIds = req.body;
   const errArray = selectedIds;
   res.set('Content-Type', 'application/json');
   const retval = [];
   db.bins.find().limit(selectedIds.length);
-  db.bins.find({ binId: { $in: selectedIds} }, function getExportCallback(err, doc) {
+  db.bins.find({ binId: { $in: selectedIds } }, (err, doc) => {
     if (err) {
       res.json(500, {
         status: 500,
@@ -187,7 +194,7 @@ server.post('/export', function exportFunction(req, res, next) {
         Description: 'The server failed to retrieve that information',
       });
     } if (doc.length <= selectedIds.length) {
-      doc.forEach(function getExportArrayify(item) {
+      doc.forEach((item) => {
         retval.push(item.json);
         errArray.splice(errArray.indexOf(item.binId), 1);
       });
@@ -205,15 +212,13 @@ server.post('/export', function exportFunction(req, res, next) {
       res.json(404, {
         status: 404,
         message: 'Not Found',
-        Description: 'None of the Ids ' + JSON.stringify(selectedIds) + ' were found.',
+        Description: `None of the Ids ${JSON.stringify(selectedIds)} were found.`,
       });
     }
   });
   next();
 });
 
-if (hostname) {
-  server.listen(port, hostname);
-} else {
-  server.listen(port);
-}
+server.listen(port, () => {
+  console.log(`server listening on port ${port}`);
+});
