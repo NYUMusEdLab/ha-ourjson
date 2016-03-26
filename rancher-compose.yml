@@ -1,2 +1,9 @@
-api:
+ourjson:
   scale: 2
+  health_check:
+    port: 8080
+    interval: 5000
+    unhealthy_threshold: 1
+    request_line: GET /healthz HTTP/1.0
+    healthy_threshold: 2
+    response_timeout: 1000

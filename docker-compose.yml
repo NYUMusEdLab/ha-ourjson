@@ -1,5 +1,5 @@
-api:
-  build: git@github.com:NYUMusEdLab/ha-ourjson.git
+ourjson:
+  image: musedlab/ha-ourjson:beta
   restart: always
   environment:
     - MONGO_DB_NAME=ourjson
