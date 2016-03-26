@@ -8,3 +8,14 @@ ourjson:
     - "8080"
   external_links:
     - mongo/mongo-cluster:mongo
+api:
+  ports:
+  - 443:8080
+  labels:
+    io.rancher.scheduler.global: 'true'
+    io.rancher.loadbalancer.ssl.ports: '443'
+  links:
+    - ourjson:ourjson
+  tty: true
+  image: rancher/load-balancer-service
+  stdin_open: true

@@ -86,6 +86,7 @@ server.get('/healthz', (req, res, next) => {
 });
 
 server.get('/loaderio-65eefbac14d4627c0ae97b938fcdd8ea/', (req, res, next) => {
+  res.contentType = 'text/plain';
   res.send('loaderio-65eefbac14d4627c0ae97b938fcdd8ea');
   next();
 });

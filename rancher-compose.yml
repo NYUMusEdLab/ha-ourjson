@@ -7,3 +7,13 @@ ourjson:
     request_line: GET /healthz HTTP/1.0
     healthy_threshold: 2
     response_timeout: 1000
+api:
+  load_balancer_config:
+    haproxy_config: {}
+  default_cert: '*.musedlab.org'
+  health_check:
+    port: 42
+    interval: 2000
+    unhealthy_threshold: 3
+    healthy_threshold: 2
+    response_timeout: 2000
