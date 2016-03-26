@@ -85,6 +85,11 @@ server.get('/healthz', (req, res, next) => {
   next();
 });
 
+server.get('/loaderio-65eefbac14d4627c0ae97b938fcdd8ea/', (req, res, next) => {
+  res.send('loaderio-65eefbac14d4627c0ae97b938fcdd8ea');
+  next();
+});
+
 server.post('/bins', filterKeys, (req, res, next) => {
   // Generate ID
   const binId = shortid.generate();
