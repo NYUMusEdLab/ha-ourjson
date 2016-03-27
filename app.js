@@ -2,12 +2,14 @@
 
 const port = process.env.PORT || '8080';
 const url = process.env.VIRTUAL_HOST || `localhost:${port}`;
-const dbhost = process.env.DBHOST || 'mongo';
-const dbname = process.env.MONGO_DB_NAME || 'ourjson';
 const protocol = process.env.HTTP_PROTOCOL || 'https';
+const dbhost = process.env.DB_HOST || 'mongo';
+const dbname = process.env.DB_NAME || 'ourjson';
+const replicaSet = process.env.REPLICA_SET || null;
 const restify = require('restify');
 const mongojs = require('mongojs');
 const shortid = require('shortid');
+const dns = require('dns');
 const key = require('mongo-key-escape');
 
 // Functions
@@ -66,7 +68,29 @@ const server = restify.createServer();
 server.pre(restify.pre.sanitizePath());
 server.use(restify.bodyParser({ mapParams: false }));
 
-const db = mongojs(`${dbhost}/${dbname}`, ['bins']);
+// Mongo Setup
+let dbstring = '';
+let db = {};
+dns.resolve(dbhost, 'A', (err, addr) => {
+  if (err || !addr) {
+    console.log(`Error is ${err}`);
+    dbstring = `${dbhost}/${dbname}`;
+  } else {
+    console.log(`${dbhost} resolves to ${addr}`);
+    if (replicaSet) {
+      dbstring = `${addr.join()}/${dbname}?replicaSet=${replicaSet}`;
+    } else {
+      dbstring = `${addr.join()}/${dbname}`;
+    }
+  }
+  db = mongojs(dbstring, ['bins']);
+  db.on('error', (err2) => {
+    console.log('Connection errored', err2);
+  });
+  server.listen(port, () => {
+    console.log(`server listening on port ${port}`);
+  });
+});
 
 server.get('/', (req, res, next) => {
   res.json(200, {
@@ -223,8 +247,4 @@ server.post('/export', (req, res, next) => {
     }
   });
   next();
-});
-
-server.listen(port, () => {
-  console.log(`server listening on port ${port}`);
 });
