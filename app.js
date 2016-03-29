@@ -67,6 +67,10 @@ function filterKeys(req, res, next) {
 const server = restify.createServer();
 server.pre(restify.pre.sanitizePath());
 server.use(restify.bodyParser({ mapParams: false }));
+server.use(restify.CORS({
+  origins: ['*'],
+  credentials: true,
+}));
 
 // Mongo Setup
 let dbstring = '';
